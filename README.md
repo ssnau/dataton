@@ -1,12 +1,20 @@
-State
+Dataton
 ------
 
 一个简单的基于cursor的状态对象实现。
+
+install
+-----
+
+```
+npm install dataton
+```  
 
 Example
 -------
 
 ```
+var State = require('dataton');
 // 任意一个cursor导致的更新都将让state内部的指针指向新的状态
 // 且之后的cursor返回值都是基于这个新的状态的路径的值
 var state = new State({
