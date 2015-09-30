@@ -1,0 +1,30 @@
+{
+  "name": "dataton",
+  "version": "1.5.0",
+  "description": "a simple cursor based state implementation",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/ssnau/dataton.git"
+  },
+  "keywords": [
+    "state",
+    "immutable"
+  ],
+  "author": "ssnau",
+  "license": "MIT",
+  "devDependencies": {
+    "blanket": "^1.1.7",
+    "mocha": "^2.2.5",
+    "udc": "^1.0.1"
+  },
+  "dependencies": {
+    "eventemitter3": "^1.1.0"
+  }
+}
