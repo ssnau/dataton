@@ -21,6 +21,64 @@ function merge(a, b, c, d, e, f, g) {
     }
     return dest;
 }
+
+var fnToString = function(fn) { return Function.prototype.toString.call(fn); }
+var objStringValue = fnToString(Object);
+
+/**
+ * @param {any} obj The object to inspect.
+ * @returns {boolean} True if the argument appears to be a plain object.
+ */
+function isPlainObject(obj) {
+  if (!obj || typeof obj !== 'object') {
+    return false
+  }
+
+  var proto = typeof obj.constructor === 'function' ? Object.getPrototypeOf(obj) : Object.prototype
+
+  if (proto === null) {
+    return true
+  }
+
+  var constructor = proto.constructor;
+
+  return typeof constructor === 'function'
+    && constructor instanceof constructor
+    && fnToString(constructor) === objStringValue
+}
+function find(arr, key, target) {
+  var len = arr.length;
+  for (var i = 0; i < len; i++) {
+    if (!arr[i]) continue;
+    if (arr[i][key] === target) return arr[i];
+  }
+}
+function deepClone(object) {
+  var objects = [];
+  function _deepClone(obj, depth) {
+    depth = (depth || 0 );
+    if (depth > 20) {
+      throw new Error('probably too deep to clone..')
+    }
+    var res = {};
+    objects.push({
+      source: obj,
+      dest: res
+    });
+    Object.keys(obj).forEach(function(k) {
+       if (isPlainObject(obj[k])) {
+         var j = find(objects, 'source', obj[k]);
+         if (j) { res[k] = j.dest; return; }
+         res[k] = _deepClone(obj[k], depth + 1);
+       } else {
+         res[k] = obj[k];
+       }
+    });
+    return res;
+  }
+  return _deepClone(object);
+}
+
 function remove(array, index) {
     return array.filter(function(__, i) {
         return index !== i;
@@ -121,21 +179,34 @@ State.prototype.cursor = function (path, errorplaceholder) {
   // please use `update` to update the cursor pointed value.
   ret.update = function (subpath, value) {
     if (typeof subpath === 'function') {
-        throw Error('cursor.update does not support unserializable object such as function');
+        var p = ['_state'].concat(path);
+        var val = subpath(deepClone(getIn(me, p)));
+        recursiveAssign(me, p, val);
+        return;
     }
     if (arguments.length === 1) { value = subpath; subpath = []; }
     if (typeof subpath === 'string') subpath = subpath.split('.');
     var p = ['_state'].concat(path.concat(subpath));
-    if (getIn(me, p.concat()) !== value) {
+
+    function recursiveAssign(obj, path, val) {
         // 更新p路径上的所有变量的引用
         var i = 1;
-        while(i < p.length) {
-            var xpath = p.slice(0, i);
-            xpath.length && INNER.assign(me, xpath, merge(getIn(me, xpath)));
+        while(i < path.length) {
+            var xpath = path.slice(0, i);
+            xpath.length && INNER.assign(obj, xpath, merge(getIn(obj, xpath)));
             i++;
         }
-        assign(me, p.concat(), value);
-        me.emit('change', me._state);
+        assign(obj, path.concat(), val);
+        obj.emit('change', obj._state);
+    }
+    if (getIn(me, p.concat()) !== value) {
+      recursiveAssign(me, p.concat(), value);
+    } else {
+      me.emit('message', {
+        type: "no-update",
+        path: p.slice(1), // remove heading '_state'
+        value: value
+      });
     }
   };
 
@@ -164,6 +235,12 @@ State.prototype.cursor = function (path, errorplaceholder) {
     });
     if (changedPaths.length) {
       me.emit('change', me._state);
+    } else {
+      me.emit('message', {
+        type: "no-update-by-merge",
+        path: path,
+        value: value
+      });
     }
   };
   return ret;
@@ -203,7 +280,7 @@ State.prototype.canRedo = function () {
   var state = this._records[this._recordIndex + 1];
   return !!state;
 }
-State.prototype.undo = function() {  
+State.prototype.undo = function() { 
   var state = this._records[this._recordIndex - 1];
   if (state) {
       this.load(state);

@@ -540,6 +540,52 @@ describe('updatae function', function() {
 
 });
 
+describe('update by function', function() {
+  it('should update _state', function () {
+      var state = new State();
+      state.load({
+          profile: {
+              name: "jack",
+              age: 10
+          }
+      });
+      var profileCursor = state.cursor('profile');
+      profileCursor.update(function(profile) {
+        profile.name = 'john';
+        return profile;
+      });
+      assert.equal(state.get('profile.name'), 'john');
+      var nameCursor = state.cursor('profile.name');
+      nameCursor.update(function(profile) {
+        return 'clinton';
+      });
+      assert.equal(state.get('profile.name'), 'clinton');
+  });
+
+});
+
+describe('update cancel with event', function() {
+  it('should update _state', function () {
+      var state = new State();
+      state.load({
+          profile: {
+              name: "jack",
+              age: 10
+          }
+      });
+      
+      var message;
+      state.on('message', function(data) {
+        message = data;
+      });
+      var nameCursor = state.cursor('profile.name');
+      nameCursor.update('jack');
+      assert.equal(message.type, 'no-update');
+      assert.deepEqual(message.path, ['profile', 'name']);
+  });
+
+});
+
 describe('inner function', function () {
     var keyPathsCall = State.INNER_FUNC.keyPathsCall;
 
@@ -554,7 +600,6 @@ describe('inner function', function () {
         });
         assert.equal(maxlength, 10);
     });
-
 });
 
 describe('time machine', function () {
