@@ -37,6 +37,13 @@ assert.equal(genderCursor(), 'male');
 nameCursor.update('john');
 // 如果只想更新其部分值，可传入路径。
 profileCursor.update('gender', 'female'); 
+// 如果想对对象内部进行操作，可传入函数
+// 其返回值将被设成要更新的值
+profileCursor.upate(function(profile) {
+  profile.name = "benson";
+  profile.gender = "female";
+  return profile;
+});
 
 // 能过调用cursor函数获得已经更新的值
 assert.equal(nameCursor(), 'john');
@@ -147,7 +154,7 @@ assert.equal(cursor.get('parent.mother.name'), 'nina');
 assert.equal(cursor.get('some.other.path'), undefined);
 ```
 
-### update(path, sth) 或 update(sth)
+### update(path, sth) 或 update(sth) 或 update(function)
 
 更新cursor对应路径上的值。
 ```
@@ -175,6 +182,15 @@ assert.equal(cursor().parent.mother.name, 'rose');
 cursor.update({name: 'monkey'});
 assert.equal(cursor().name, 'monkey');
 assert.equal(cursor.get('parent.mother.name'), undefined);
+
+// 通过传入函数，更新整个cursor对应的值
+cursor.update(function(profile) {
+  profile.name = 'mm';
+  profile.parent.mother.name = 'sarah';
+  return profile; // do not forget this line
+});
+assert.equal(cursor().name, 'mm');
+assert.equal(cursor.get('parent.mother.name'), sarah);
 ```
 
 #### cursorFromObject(obj)
