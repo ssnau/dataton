@@ -60,11 +60,12 @@ function deepClone(object) {
     if (depth > 20) {
       throw new Error('probably too deep to clone..')
     }
-    var res = {};
+    var res = Array.isArray(obj) ? [] : {};
     objects.push({
       source: obj,
       dest: res
     });
+
     Object.keys(obj).forEach(function(k) {
        if (isPlainObject(obj[k])) {
          var j = find(objects, 'source', obj[k]);
@@ -139,6 +140,14 @@ function keyPathsCall(obj, fn) {
     });
 }
 
+function isPlainType(obj) {
+  if (isPlainObject(obj)) return true; 
+  if (Array.isArray(obj)) return true; 
+  if (typeof obj !== 'object' && typeof obj !== 'function') return true;
+  if (obj === null || obj === void 0 || obj !== obj) return true;
+  return false;
+}
+
 function State(state, reviver) {
   this.load(state || {});
   this.clearRecord();
@@ -168,8 +177,12 @@ State.prototype.cursor = function (path, errorplaceholder) {
   if (typeof path !== 'string' && !Array.isArray(path)) throw Error('State.prototype.cursor only accept string or array, ' + (typeof path) + ' is forbidden');
   if (typeof path === 'string') { path = path.split('.'); }
   var me = this;
+  var warn = typeof console !== 'undefined' && console.warn && console.warn.bind(console);
 
   function ret(subpath) { return ret.get(subpath); }
+  function checkType(val) {
+    if (!isPlainType(val)) warn('You can only update a cursor with Object, Array or other basic types, ' + val.constructor.name + ' is not supported! Please fix and it may not work in the coming versions.');
+  }
 
   ret.get = function (subpath) {
     if (typeof subpath === 'string') { subpath = subpath.split('.'); }
@@ -181,6 +194,7 @@ State.prototype.cursor = function (path, errorplaceholder) {
     if (typeof subpath === 'function') {
         var p = ['_state'].concat(path);
         var val = subpath(deepClone(getIn(me, p)));
+        checkType(val);
         recursiveAssign(me, p, val);
         return;
     }
@@ -188,6 +202,7 @@ State.prototype.cursor = function (path, errorplaceholder) {
     if (typeof subpath === 'string') subpath = subpath.split('.');
     var p = ['_state'].concat(path.concat(subpath));
 
+    checkType(value);
     function recursiveAssign(obj, path, val) {
         // 更新p路径上的所有变量的引用
         var i = 1;
@@ -199,6 +214,7 @@ State.prototype.cursor = function (path, errorplaceholder) {
         assign(obj, path.concat(), val);
         obj.emit('change', obj._state);
     }
+
     if (getIn(me, p.concat()) !== value) {
       recursiveAssign(me, p.concat(), value);
     } else {

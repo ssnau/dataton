@@ -547,7 +547,8 @@ describe('update by function', function() {
           profile: {
               name: "jack",
               age: 10
-          }
+          },
+          scores: [1,4]
       });
       var profileCursor = state.cursor('profile');
       profileCursor.update(function(profile) {
@@ -560,8 +561,46 @@ describe('update by function', function() {
         return 'clinton';
       });
       assert.equal(state.get('profile.name'), 'clinton');
+
+      // should work with Array
+      var scoreCursor = state.cursor('scores');
+      scoreCursor.update(function(scores) {
+        scores.push('yes');
+        return scores;
+      });
+      assert.deepEqual([1, 4, 'yes'], scoreCursor());
   });
 
+  it('should only update with basic type and Object/Array', function () {
+      var state = new State();
+      state.load({
+          profile: {
+              name: "jack",
+              age: 10
+          },
+      });
+      warnText = '';
+      console.warn = function (str) { warnText = str};
+      var profileCursor = state.cursor('profile');
+      profileCursor.update(function(profile) {
+        var map = new Map();
+        map.set('name', 'joke');
+        return map;
+      });
+      assert.equal(warnText, 'You can only update a cursor with Object, Array or other basic types, Map is not supported! Please fix and it may not work in the coming versions.');
+      warnText = '';
+      profileCursor.update('');
+      profileCursor.update(0);
+      profileCursor.update(void 0);
+      profileCursor.update(true);
+      profileCursor.update(false);
+      profileCursor.update('abc');
+      profileCursor.update(NaN);
+      profileCursor.update([]);
+      profileCursor.update({});
+      profileCursor.update(null);
+      assert.equal(warnText, '');
+  });
 });
 
 describe('update cancel with event', function() {
@@ -682,7 +721,4 @@ describe('time machine 2', function () {
   state.undo();
   state.undo();
   assert.equal(state.get('name'), 'jack');
-
-
-
 });
