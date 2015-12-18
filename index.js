@@ -46,6 +46,16 @@ function isPlainObject(obj) {
     && constructor instanceof constructor
     && fnToString(constructor) === objStringValue
 }
+function isObjectOrArray(obj) {
+   return isPlainObject(obj) || Array.isArray(obj))
+}
+function isPlainType(obj) {
+  if (isPlainObject(obj)) return true; 
+  if (Array.isArray(obj)) return true; 
+  if (typeof obj !== 'object' && typeof obj !== 'function') return true;
+  if (obj === null || obj === void 0 || obj !== obj) return true;
+  return false;
+}
 function find(arr, key, target) {
   var len = arr.length;
   for (var i = 0; i < len; i++) {
@@ -56,6 +66,7 @@ function find(arr, key, target) {
 function deepClone(object) {
   var objects = [];
   function _deepClone(obj, depth) {
+    if (isObjectOrArray(obj)) return obj;
     depth = (depth || 0 );
     if (depth > 20) {
       throw new Error('probably too deep to clone..')
@@ -67,7 +78,7 @@ function deepClone(object) {
     });
 
     Object.keys(obj).forEach(function(k) {
-       if (isPlainObject(obj[k])) {
+       if (isObjectOrArray(obj[k])) {
          var j = find(objects, 'source', obj[k]);
          if (j) { res[k] = j.dest; return; }
          res[k] = _deepClone(obj[k], depth + 1);
@@ -120,6 +131,7 @@ function traverseObject(obj, fn) {
 
         val = fn(keys.concat(), obj);
         if (val === false) return;
+        if (!isObjectOrArray(obj)) return;
 
         Object.keys(obj).forEach(function (key) {
             keys.push(key);
@@ -140,13 +152,6 @@ function keyPathsCall(obj, fn) {
     });
 }
 
-function isPlainType(obj) {
-  if (isPlainObject(obj)) return true; 
-  if (Array.isArray(obj)) return true; 
-  if (typeof obj !== 'object' && typeof obj !== 'function') return true;
-  if (obj === null || obj === void 0 || obj !== obj) return true;
-  return false;
-}
 
 function State(state, reviver) {
   this.load(state || {});
