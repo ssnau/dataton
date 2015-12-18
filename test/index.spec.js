@@ -109,15 +109,6 @@ describe('cursor should work:', function() {
 
     });
 
-    it('cursor update should not accept function', function () {
-        var state = new State();
-        assert.throws(function () {
-            state.cursor('abc').update(function(){
-
-            });
-        });
-    });
-
     it('set cursor value as undefined', function () {
         var state = new State();
         state.load({
