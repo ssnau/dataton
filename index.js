@@ -66,7 +66,7 @@ function find(arr, key, target) {
 function deepClone(object) {
   var objects = [];
   function _deepClone(obj, depth) {
-    if (isObjectOrArray(obj)) return obj;
+    if (!isObjectOrArray(obj)) return obj;
     depth = (depth || 0 );
     if (depth > 20) {
       throw new Error('probably too deep to clone..')
