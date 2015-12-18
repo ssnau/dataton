@@ -206,6 +206,7 @@ State.prototype.cursor = function (path, errorplaceholder) {
     if (arguments.length === 1) { value = subpath; subpath = []; }
     if (typeof subpath === 'string') subpath = subpath.split('.');
     var p = ['_state'].concat(path.concat(subpath));
+    var oldvalue = getIn(me, p.concat());
 
     checkType(value);
     function recursiveAssign(obj, path, val) {
@@ -218,9 +219,10 @@ State.prototype.cursor = function (path, errorplaceholder) {
         }
         assign(obj, path.concat(), val);
         obj.emit('change', obj._state);
+        obj.emit('update', {host: obj, path: path, oldval: oldvalue, newval: val});
     }
 
-    if (getIn(me, p.concat()) !== value) {
+    if (oldvalue !== value) {
       recursiveAssign(me, p.concat(), value);
     } else {
       me.emit('message', {
