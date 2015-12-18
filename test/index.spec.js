@@ -1,3 +1,5 @@
+require('core-js'); // polyfill for low nodejs version
+
 var path = require('path');
 var indexfile = path.join(__dirname, '../index.js');
 require('blanket')({
