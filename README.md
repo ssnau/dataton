@@ -41,7 +41,7 @@ nameCursor.update('john');
 profileCursor.update('gender', 'female'); 
 // 如果想对对象内部进行操作，可传入函数
 // 其返回值将被设成要更新的值
-profileCursor.upate(function(profile) {
+profileCursor.update(function(profile) {
   profile.name = "benson";
   profile.gender = "female";
   return profile;
@@ -55,7 +55,7 @@ assert.equal(genderCursor(), 'female');
 API
 -------
 
-###State
+### State
 
 #### cursor(path)
 
@@ -288,7 +288,30 @@ var fatherCursor = ns.cursor('parent.father'); // 相当于state.cursor('profile
 
 assert.equal(nameCursor(), 'jack');
 assert.equal(fatherCursor().name, 'chris');
+
 ```
+
+### 事件
+dataton的实例会在不同阶段发出不同事件.
+当调用set或cursor的update方法成功更新指定路径上的对象时.
+会emit出change和update事件，可以通过state.on('change, callback).
+或state.on('update', callback)来监听.
+
+- change事件的callback不应该有参数。
+- update事件的callback可有一个参数，这个参数是一个JS Object, 有如下属性：
+  - host: 即宿主对象state
+  - path: 更新的路径
+  - oldval: 原始值
+  - newval: 新值
+
+dataton实例将在不同时段emit出相应的message事件, 方便用户debug.
+
+
+### 注意
+
+- 如果一个cursor的值是引类型, 千万不要直接修改其对应值，应当生成一个新值然后传给其update.
+- 不应该在dataton实例里存储非Object, Array和基础类型的值.
+
 
 License
 ----

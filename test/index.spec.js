@@ -610,10 +610,21 @@ describe('update cancel with event', function() {
       state.on('message', function(data) {
         message = data;
       });
+      var ud = null;
+      state.on('update', function (data) {
+        ud = data;
+      });
       var nameCursor = state.cursor('profile.name');
       nameCursor.update('jack');
       assert.equal(message.type, 'no-update');
       assert.deepEqual(message.path, ['profile', 'name']);
+      assert.equal(ud, null);
+      
+      nameCursor.update('john');
+      assert.equal(ud.host, state);
+      assert.deepEqual(ud.path, ['profile', 'name']);
+      assert.equal(ud.oldval, 'jack');
+      assert.equal(ud.newval, 'john');
   });
 
 });

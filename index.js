@@ -219,7 +219,7 @@ State.prototype.cursor = function (path, errorplaceholder) {
         }
         assign(obj, path.concat(), val);
         obj.emit('change', obj._state);
-        obj.emit('update', {host: obj, path: path, oldval: oldvalue, newval: val});
+        obj.emit('update', {host: obj, path: path.slice(1), oldval: oldvalue, newval: val});
     }
 
     if (oldvalue !== value) {
@@ -255,6 +255,8 @@ State.prototype.cursor = function (path, errorplaceholder) {
             i++;
         }
         assign(me, p.concat(), v);
+        // emit `update` for every endpoint
+        me.emit('update', {host: me, path: p.slice(1), oldval: getIn(me, p), newval: v})
     });
     if (changedPaths.length) {
       me.emit('change', me._state);
