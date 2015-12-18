@@ -1,3 +1,8 @@
+v1.6.3 (2015-12-18)
+
+- add travis ci
+- fix bug for update(fn) with basic type
+
 v1.6.2 (2015-12-17)
 
 - fix update(fn) accidentally convert Array to be Array-Like Object
