@@ -47,7 +47,7 @@ function isPlainObject(obj) {
     && fnToString(constructor) === objStringValue
 }
 function isObjectOrArray(obj) {
-   return isPlainObject(obj) || Array.isArray(obj))
+   return isPlainObject(obj) || Array.isArray(obj);
 }
 function isPlainType(obj) {
   if (isPlainObject(obj)) return true; 
