@@ -90,7 +90,6 @@ function deepClone(object) {
   }
   return _deepClone(object);
 }
-
 function remove(array, index) {
     return array.filter(function(__, i) {
         return index !== i;
@@ -118,7 +117,6 @@ function getIn(obj, _path) {
     }
     return empty(obj) ? void 0 : obj[last];
 }
-
 function traverseObject(obj, fn) {
     var keys = [];
     var val;
@@ -142,7 +140,6 @@ function traverseObject(obj, fn) {
 
     traverse(obj);
 }
-
 function keyPathsCall(obj, fn) {
     traverseObject(obj, function(keys, o) {
         if (typeof o !== 'object' || keys.length >= 10) {
@@ -152,8 +149,8 @@ function keyPathsCall(obj, fn) {
     });
 }
 
-
-function State(state, reviver) {
+function State(state, config) {
+  this._config = {};
   this.load(state || {});
   this.clearRecord();
   this.emit('change', this._state);
@@ -162,6 +159,9 @@ State.prototype = new EventEmitter;
 State.prototype.load = function (state) {
   this._state = state;
   this.emit('change', this._state);
+};
+State.prototype.config = function (key, val) {
+  state._config[key] = val;
 };
 // deprecated.
 State.prototype.toJS = function () {
@@ -176,19 +176,25 @@ State.prototype.set = function (path, value) {
 };
 State.prototype.update = State.prototype.set;
 
-State.prototype.cursor = function (path, errorplaceholder) {
-  if (!path) path = [];
-  if (errorplaceholder) throw Error("cursor doesn't support a second argument");
-  if (typeof path !== 'string' && !Array.isArray(path)) throw Error('State.prototype.cursor only accept string or array, ' + (typeof path) + ' is forbidden');
-  if (typeof path === 'string') { path = path.split('.'); }
+State.prototype.cursor = function cursor(path, errorplaceholder) {
   var me = this;
   var warn = typeof console !== 'undefined' && console.warn && console.warn.bind(console);
 
   function ret(subpath) { return ret.get(subpath); }
+  function normalize(path) {
+    if (!path) path = [];
+    if (errorplaceholder) throw Error("cursor doesn't support a second argument");
+    if (typeof path !== 'string' && !Array.isArray(path)) throw Error('State.prototype.cursor only accept string or array, ' + (typeof path) + ' is forbidden');
+    if (typeof path === 'string') { path = path.split('.'); }
+    return path;
+
+  }
   function checkType(val) {
-    if (!isPlainType(val)) warn('You can only update a cursor with Object, Array or other basic types, ' + val.constructor.name + ' is not supported! Please fix and it may not work in the coming versions.');
+    if (me._config['SKIP_TYPE_CHECK']) return; // for some reason, you may want to store non-plain type data
+    if (!isPlainType(val)) warn('You should only update a cursor with Object, Array or other basic types, ' + val.constructor.name + ' is not supported officially! Please fix it or call state.config("SKIP_TYPE_CHECK", true) to skip type-check.');
   }
 
+  path = normalize(path);
   ret.get = function (subpath) {
     if (typeof subpath === 'string') { subpath = subpath.split('.'); }
     return getIn(me, ['_state'].concat(path).concat(typeof subpath === 'undefined' ? [] : subpath));
@@ -268,6 +274,10 @@ State.prototype.cursor = function (path, errorplaceholder) {
       });
     }
   };
+
+  ret.cursor = function (subpath) {
+    return cursor(path.concat(normalize(subpath)));
+  }
   return ret;
 }
 State.prototype.cursorFromObject = function (obj) {

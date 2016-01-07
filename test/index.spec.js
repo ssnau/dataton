@@ -580,7 +580,7 @@ describe('update by function', function() {
         map.set('name', 'joke');
         return map;
       });
-      assert.equal(warnText, 'You can only update a cursor with Object, Array or other basic types, Map is not supported! Please fix and it may not work in the coming versions.');
+      assert.equal(warnText, 'You should only update a cursor with Object, Array or other basic types, Map is not supported officially! Please fix it or call state.config("SKIP_TYPE_CHECK", true) to skip type-check.');
       warnText = '';
       profileCursor.update('');
       profileCursor.update(0);
