@@ -1,3 +1,7 @@
+v1.6.5 (2016-01-07)
+
+- add SKIP_TYPE_CHECK config
+
 v1.6.3 (2015-12-18)
 
 - add travis ci
