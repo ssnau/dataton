@@ -171,13 +171,17 @@ State.prototype.get = function (path) {
   if (!path) return this._state;
   return this.cursor(path)();
 }
-State.prototype.set = function (path, value) {
+State.prototype.set = function (path, value, mute) {
+  if (mute) {
+    return this.cursor(path).muteUpdate(value);
+  }
   return this.cursor(path).update(value);
 };
 State.prototype.update = State.prototype.set;
 
 State.prototype.cursor = function cursor(path, errorplaceholder) {
   var me = this;
+  var $mute = false;
   var warn = typeof console !== 'undefined' && console.warn && console.warn.bind(console);
 
   function ret(subpath) { return ret.get(subpath); }
@@ -224,8 +228,10 @@ State.prototype.cursor = function cursor(path, errorplaceholder) {
             i++;
         }
         assign(obj, path.concat(), val);
-        obj.emit('change', obj._state);
-        obj.emit('update', {host: obj, path: path.slice(1), oldval: oldvalue, newval: val});
+        if (!$mute) {
+          obj.emit('change', obj._state);
+          obj.emit('update', {host: obj, path: path.slice(1), oldval: oldvalue, newval: val});
+        }
     }
 
     if (oldvalue !== value) {
@@ -238,6 +244,16 @@ State.prototype.cursor = function cursor(path, errorplaceholder) {
       });
     }
   };
+
+  ret.muteUpdate = function (subpath, value) {
+    $mute = true;
+    try {
+      ret.update(subpath, value);
+    } catch (e) {
+      // do nothing
+    }
+    $mute = false;
+  }
 
   ret.mergeUpdate = function (value) {
     var changed, changedPaths = [];
@@ -262,7 +278,9 @@ State.prototype.cursor = function cursor(path, errorplaceholder) {
         }
         assign(me, p.concat(), v);
         // emit `update` for every endpoint
-        me.emit('update', {host: me, path: p.slice(1), oldval: getIn(me, p), newval: v})
+        if (!$mute) {
+          me.emit('update', {host: me, path: p.slice(1), oldval: getIn(me, p), newval: v})
+        }
     });
     if (changedPaths.length) {
       me.emit('change', me._state);
